@@ -10,6 +10,11 @@ find_package(OpenCV 3.3.1 REQUIRED)
 set(OpenCV_LIBS opencv_core opencv_imgproc opencv_highgui)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+find_package(PythonLibs 2.7)
+message(${PYTHON_INCLUDE_DIRS})
+
 aux_source_directory("./src" SRC_LIST)
 add_executable(${PROJECT_NAME} ${SRC_LIST})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${PYTHON_LIBRARIES})

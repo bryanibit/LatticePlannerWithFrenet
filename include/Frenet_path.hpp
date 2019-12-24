@@ -4,6 +4,7 @@
 #include <cubic_spline.hpp>
 #include <vector>
 #include <tuple>
+#include <chrono>
 using namespace Eigen;
 class quintic_polynomial{
 private:

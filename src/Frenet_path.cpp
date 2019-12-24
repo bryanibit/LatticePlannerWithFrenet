@@ -44,17 +44,17 @@ quintic_polynomial::quintic_polynomial(double xs, double vxs, double axs, double
     A << pow(T,3), pow(T,4), pow(T, 5),
     3 * pow(T, 2), 4 * pow(T, 3), 5 * pow(T, 4),
     6 * T, 12 * pow(T, 2), 20 * pow(T, 3);
-    std::cout << "A: " << std::endl << A << std::endl;
-    std::cout << "A.size(): " << A.rows() << ",  " << A.cols() << std::endl;
+//    std::cout << "A: " << std::endl << A << std::endl;
+//    std::cout << "A.size(): " << A.rows() << ",  " << A.cols() << std::endl;
 
     VectorXd b(3);
     b << xe - this->a0 - this->a1 * T - this->a2 * pow(T, 2),
             vxe - this->a1 - this->a2 * T * 2,
             axe - this->a2 * 2;
-    std::cout << "b: " << std::endl << b << std::endl;
-    std::cout << "b size(): " << b.size() << std::endl;
-    if(A.determinant() != 0)
-        std::cout << "A is nonsingular\n";
+//    std::cout << "b: " << std::endl << b << std::endl;
+//    std::cout << "b size(): " << b.size() << std::endl;
+//    if(A.determinant() != 0)
+//        std::cout << "A is nonsingular\n";
     VectorXd x = A.colPivHouseholderQr().solve(b);
 
     this->a3 = x(0);
@@ -157,24 +157,25 @@ Frenet_path::Frenet_path(const Frenet_path& fp){
 std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c_d, double c_d_d, double c_d_dd, double s0){
     std::vector<Frenet_path> frenet_paths;
     //  generate path to each offset goal
-    for(double di = -MAX_ROAD_WIDTH; di < MAX_ROAD_WIDTH; di +=D_ROAD_W){
+    for(double di = 0.0 - MAX_ROAD_WIDTH; di < MAX_ROAD_WIDTH; di += D_ROAD_W){
+//        std::cout << "start path\n";
         //  Lateral motion planning
         for(double Ti = MINT; Ti < MAXT; Ti += DT){
-            auto fp = Frenet_path();
-            std::cout << "Ti / DT: " << Ti/DT << std::endl;
-            std::cout << "ceil of Ti / DT:" << ceil(Ti/DT) << std::endl;
+            Frenet_path fp = Frenet_path();
+            //std::cout << "Ti / DT: " << Ti/DT << std::endl;
+            //std::cout << "ceil of Ti / DT:" << ceil(Ti/DT) << std::endl;
             fp.t.resize(static_cast<int> (ceil(Ti/DT)));
             fp.d.resize(static_cast<int> (ceil(Ti/DT)));
             fp.d_d.resize(static_cast<int> (ceil(Ti/DT)));
             fp.d_dd.resize(static_cast<int> (ceil(Ti/DT)));
             fp.d_ddd.resize(static_cast<int> (ceil(Ti/DT)));
-            fp.s.resize(fp.t.size());
-            fp.s_d.resize(fp.t.size());
-            fp.s_dd.resize(fp.t.size());
-            fp.s_ddd.resize(fp.t.size());
+            fp.s.resize(static_cast<int> (ceil(Ti/DT)));
+            fp.s_d.resize(static_cast<int> (ceil(Ti/DT)));
+            fp.s_dd.resize(static_cast<int> (ceil(Ti/DT)));
+            fp.s_ddd.resize(static_cast<int> (ceil(Ti/DT)));
 
             auto lat_qp = quintic_polynomial(c_d, c_d_d, c_d_dd, di, 0.0, 0.0, Ti);
-            for(auto i_t = std::make_pair(0, 0.0); i_t.first < int(Ti/DT) + 1 && i_t.second < Ti; ++i_t.first, i_t.second += DT) {
+            for(auto i_t = std::make_pair(0, 0.0); i_t.first < static_cast<int> (ceil(Ti/DT)) && i_t.second < Ti; ++i_t.first, i_t.second += DT) {
                 fp.t(i_t.first) = i_t.second;
             }
             for(int i = 0; i < fp.t.size(); ++i)
@@ -185,13 +186,13 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
                 fp.d_dd(i) = lat_qp.calc_second_derivative(fp.t(i));
             for(int i = 0; i < fp.t.size(); ++i)
                 fp.d_ddd(i) = lat_qp.calc_third_derivative(fp.t(i));
-            std::cout << "here1\n";
+            //std::cout << "here1\n";
 
             // Loongitudinal motion planning (Velocity keeping)
             for(double tv = TARGET_SPEED - D_T_S * N_S_SAMPLE; tv < TARGET_SPEED + D_T_S * N_S_SAMPLE; tv += D_T_S){
                 auto tfp = fp;
                 auto lon_qp = quartic_polynomial(s0, c_speed, 0.0, tv, 0.0, Ti);
-                std::cout << "fp.t.size(): " << fp.t.size() << std::endl;
+                //std::cout << "fp.t.size(): " << fp.t.size() << std::endl;
                 for(int i = 0; i < fp.t.size(); ++i)
                     tfp.s(i) = lon_qp.calc_point(fp.t(i));
                 for(int i = 0; i < fp.t.size(); ++i)
@@ -213,28 +214,39 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
                 frenet_paths.push_back(tfp);
             }
         }
+//        std::cout << "end path\n";
     }
+//    std::cout << "return path\n";
     return frenet_paths;
 }
 
 std::vector<Frenet_path> Frenet_plan::calc_global_paths(std::vector<Frenet_path> &fplist, Spline2D &csp){
-    for(auto &fp : fplist){
+    for(Frenet_path &fp : fplist){
+//        std::cout << "start global\n";
         //calc global positions
         fp.x.resize(fp.s.size());
         fp.y.resize(fp.s.size());
         for(int i = 0; i < fp.s.size(); ++i){
+//            std::cout << "fp.s start global\n";
+//            std::cout << "fp.s's size: " << fp.s.size() << std::endl;
             auto ixy_pair = csp.calc_position(fp.s(i));
-            if(ixy_pair.first == -1)
+            //std::cout << "fp.s 1 start global\n";
+            if(ixy_pair.first == -1 || ixy_pair.second == -1)
                 break;
             auto iyaw = csp.calc_yaw(fp.s(i));
+            //std::cout << "fp.s 2 start global\n";
             auto di = fp.d(i);
+//            std::cout << "fp.s 3 start global\n";
             auto fx = ixy_pair.first + di * cos(iyaw + M_PI / 2.0);
             auto fy = ixy_pair.second + di * sin(iyaw + M_PI / 2.0);
+//            std::cout << "fp.s 4 start global\n";
             fp.x(i) = fx;
             fp.y(i) = fy;
+//            std::cout << "fp.s end global\n";
         }
+//        std::cout << "yaw global\n";
         // calc yaw and ds
-                fp.yaw.resize(fp.x.size());
+        fp.yaw.resize(fp.x.size());
         fp.ds.resize(fp.x.size());
         for(int i = 0; i < fp.x.size() - 1; ++i){
             auto dx = fp.x(i + 1) - fp.x(i);
@@ -244,11 +256,15 @@ std::vector<Frenet_path> Frenet_plan::calc_global_paths(std::vector<Frenet_path>
         }
         fp.yaw(fp.yaw.size() - 1) = fp.yaw(fp.yaw.size() - 2);
         fp.ds(fp.ds.size() - 1) = fp.ds(fp.ds.size() - 2);
+
+//        std::cout << "curvature global\n";
         //calc curvature !! fp.c size is smaller than fp.yaw
-                fp.c.resize(fp.yaw.size() - 1);
+        fp.c.resize(fp.yaw.size() - 1);
         for(int i = 0; i < fp.yaw.size() - 1; ++i)
             fp.c(i) = (fp.yaw(i + 1) - fp.yaw(i)) / fp.ds(i);
+//        std::cout << "end global\n";
     }
+//    std::cout << "return global\n";
     return fplist;
 }
 
@@ -275,7 +291,7 @@ std::vector<Frenet_path> Frenet_plan::check_paths(std::vector<Frenet_path> &fpli
     std::vector<int> okind;
     for(int i = 0; i < fplist.size(); ++i){
         //Max speed check
-        if([fplist, i](){
+        if([&fplist, i](){
             for(int j = 0; j < fplist[i].s_d.size(); ++j){
                 if(fplist[i].s_d(j) > MAX_SPEED)
                     return true;
@@ -283,7 +299,7 @@ std::vector<Frenet_path> Frenet_plan::check_paths(std::vector<Frenet_path> &fpli
             return false;
         }())
             continue;
-        else if([fplist, i](){
+        else if([&fplist, i](){
             for(int j = 0; j < fplist[i].s_dd.size(); ++j){
                 if(abs(fplist[i].s_dd(j)) > MAX_ACCEL)
                     return true;
@@ -291,7 +307,7 @@ std::vector<Frenet_path> Frenet_plan::check_paths(std::vector<Frenet_path> &fpli
             return false;
         }())
             continue;
-        else if([fplist, i](){
+        else if([&fplist, i](){
             for(int j = 0; j < fplist[i].c.size(); ++j){
                 if(abs(fplist[i].c(j)) > MAX_CURVATURE)
                     return true;
@@ -314,6 +330,7 @@ Frenet_path Frenet_plan::frenet_optimal_planning(Spline2D& csp, double s0, doubl
     auto fplist = this->calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0);
     fplist = this->calc_global_paths(fplist, csp);
     fplist = this->check_paths(fplist, ob);
+
     // find minimum cost path
     auto mincost = std::numeric_limits<double>::max();
     auto bestpath = Frenet_path();

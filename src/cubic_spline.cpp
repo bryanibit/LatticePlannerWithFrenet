@@ -50,13 +50,25 @@ int Spline::__search_index(double t){
 }
 
 double Spline::calc(double t){
+//    std::cout << "enter calc spline\n";
     if(t < this->x(0))
         return -1.0;
     else if(t > this->x(x.size() - 1))
         return -1.0;
+//    std::cout << "middle\n";
     auto i = this->__search_index(t);
+    if(i == -1)
+        return -1.0;
+//    std::cout << "finish search\n";
+//    std::cout << "i: " << i << std::endl;
+//    std::cout << "x's size(): " << this->x.size() << std::endl;
+//    std::cout << "a's size(): " << this->a.size() << std::endl;
+//    std::cout << "b's size(): " << this->b.size() << std::endl;
+//    std::cout << "c's size(): " << this->c.size() << std::endl;
+//    std::cout << "d's size(): " << this->d.size() << std::endl;
     auto dx = t - this->x(i);
     auto result = this->a(i) + this->b(i) * dx + this->c(i) * dx * dx + this->d(i) * dx * dx * dx;
+//    std::cout << "calculate finish\n";
     return result;
 }
 
