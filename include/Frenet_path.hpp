@@ -5,6 +5,7 @@
 #include <vector>
 #include <tuple>
 #include <chrono>
+#include <cmath>
 using namespace Eigen;
 class quintic_polynomial{
 private:

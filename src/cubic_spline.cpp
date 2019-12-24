@@ -42,33 +42,24 @@ Spline::Spline(const VectorXd &x_, const VectorXd &y_){
 }
 // t should be positive always?????
 int Spline::__search_index(double t){
-    for(int i = 0; i < this->x.size(); ++i){
-        if(x(i) > t)
-            return i - 1;
+    for(int i = x.size() - 1; i >= 0; --i){
+        if(x(i) <= t)
+            return i;
     }
     return -1;
 }
 
 double Spline::calc(double t){
-//    std::cout << "enter calc spline\n";
     if(t < this->x(0))
-        return -1.0;
+        return NAN;
     else if(t > this->x(x.size() - 1))
-        return -1.0;
-//    std::cout << "middle\n";
+        return NAN;
     auto i = this->__search_index(t);
     if(i == -1)
-        return -1.0;
-//    std::cout << "finish search\n";
-//    std::cout << "i: " << i << std::endl;
-//    std::cout << "x's size(): " << this->x.size() << std::endl;
-//    std::cout << "a's size(): " << this->a.size() << std::endl;
-//    std::cout << "b's size(): " << this->b.size() << std::endl;
-//    std::cout << "c's size(): " << this->c.size() << std::endl;
-//    std::cout << "d's size(): " << this->d.size() << std::endl;
+        return NAN;
+
     auto dx = t - this->x(i);
     auto result = this->a(i) + this->b(i) * dx + this->c(i) * dx * dx + this->d(i) * dx * dx * dx;
-//    std::cout << "calculate finish\n";
     return result;
 }
 
@@ -76,9 +67,9 @@ double Spline::calcd(double t){
     //Calc first derivative
     //if t is outside of the input x, return -1
     if(t < this->x(0))
-        return -1;
+        return NAN;
     else if(t > this->x(x.size() - 1))
-        return -1;
+        return NAN;
     auto i = this->__search_index(t);
     auto dx = t - this->x(i);
     auto result = this->b(i) + 2.0 * this->c(i) * dx + 3.0 * this->d(i) * pow(dx,2.0);
@@ -88,9 +79,9 @@ double Spline::calcd(double t){
 double Spline::calcdd(double t){
     //Calc second derivative
     if(t < this->x(0))
-        return -1;
+        return NAN;
     else if(t > this->x(x.size() - 1))
-        return -1;
+        return NAN;
 
     auto i = this->__search_index(t);
     auto dx = t - this->x(i);
@@ -137,11 +128,9 @@ Spline2D::Spline2D(const VectorXd &x_, const VectorXd &y_){
 
 Eigen::VectorXd Spline2D::__calc_s(const VectorXd &x, const VectorXd &y){
     VectorXd dx(x.size() - 1);
-    std::cout << "x.size: " << x.size() << std::endl;
     for(int i = 1; i < x.size(); ++i)
         dx(i - 1) = x(i) - x(i - 1);
     VectorXd dy(y.size() - 1);
-    std::cout << "y.size: " << y.size() << std::endl;
     for(int i = 1; i < y.size(); ++i)
         dy(i - 1) = y(i) - y(i - 1);
     this->ds = (sqrt(dx.array() * dx.array() + dy.array() * dy.array())).matrix();

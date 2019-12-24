@@ -13,15 +13,6 @@ namespace plt = matplotlibcpp;
 
 const int SIM_LOOP = 500;
 int main() {
-//    Matrix3d m;
-//    m << 1,-1,-1,-1,1,1,0,-4,-2;
-//    cout << "m =" << endl << m << endl;
-//    Vector3d v(3);
-//    v << -1, 1, -2;
-//    auto x = m.colPivHouseholderQr().solve(v);
-//    std::cout << "ans: " << std::endl << x << std::endl;
-//    std::cout << "multiple ans: " << std::endl << m*x << std::endl;
-//    std::cout << "with the same with v: " << std::endl << v << std::endl;
     auto show_animation = true;
     std::cout << "Start...\n";
     // Current status will be shown in this file
@@ -58,37 +49,20 @@ int main() {
     auto area = 20.0;  // animation area length [m]
     auto map_width = (*origxmax - *origxmin) * 10 + 1;
     auto map_height = (*origymax - *origymin) * 20 + 1;
-//    std::cout <<  "(xmin, ymin): (" << *origxmin << ", " << *origymin << ")" << std::endl;
-//    std::cout <<  "(xmax, ymax): (" << *origxmax << ", " << *origymax << ")" << std::endl;
 
     Mat map(static_cast<int>(ceil(map_height)), static_cast<int>(ceil(map_width)), CV_8UC3, Scalar(255,255,255));
 
     for(int i = 0; i < SIM_LOOP; ++i){
-//        std::cout << "7\n";
-        //auto t_start = std::chrono::high_resolution_clock::now();
-
-
         auto path = fplan.frenet_optimal_planning(
                 csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob);
-
-        std::cout << "path1x, path1y: " << path.x(1) << ", " << path.y(1) << std::endl;
-
-        //auto t_end = std::chrono::high_resolution_clock::now();
-        //double elapsed_time_ms = std::chrono::duration<double, std::milli>(t_end-t_start).count();
-//        std::cout << "frenet_optimal_planning dur: " << elapsed_time_ms << " ms\n";
-        //std::cout << "path.s size: " << path.s.size() << std::endl;
-        //std::cout << "path.d size: " << path.d.size() << std::endl;
-        //std::cout << "path.d_d size: " << path.d_d.size() << std::endl;
-        //std::cout << "path.d_dd size: " << path.d_dd.size() << std::endl;
-//        std::cout << "8\n";
         s0 = path.s[1];
         c_d = path.d[1];
         c_d_d = path.d_d[1];
         c_d_dd = path.d_dd[1];
         c_speed = path.s_d[1];
 
-        if(i % 10 == 0)
-            std::cout << "----------" << i << "----------" << std::endl;
+//        if(i % 10 == 0)
+//            std::cout << "----------" << i << "----------" << std::endl;
         if(pow(path.x(1) - tx[tx.size() - 1], 2) + pow(path.y(1) - ty[ty.size() - 1], 2) <= 1.0){
             std::cout << "Goal\n";
             break;

@@ -175,7 +175,7 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
             fp.s_ddd.resize(static_cast<int> (ceil(Ti/DT)));
 
             auto lat_qp = quintic_polynomial(c_d, c_d_d, c_d_dd, di, 0.0, 0.0, Ti);
-            for(auto i_t = std::make_pair(0, 0.0); i_t.first < static_cast<int> (ceil(Ti/DT)) && i_t.second < Ti; ++i_t.first, i_t.second += DT) {
+            for(auto i_t = std::make_pair(0, 0.0); i_t.first < static_cast<int>(ceil(Ti/DT)) && i_t.second < Ti; ++i_t.first, i_t.second += DT) {
                 fp.t(i_t.first) = i_t.second;
             }
             for(int i = 0; i < fp.t.size(); ++i)
@@ -186,7 +186,6 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
                 fp.d_dd(i) = lat_qp.calc_second_derivative(fp.t(i));
             for(int i = 0; i < fp.t.size(); ++i)
                 fp.d_ddd(i) = lat_qp.calc_third_derivative(fp.t(i));
-            //std::cout << "here1\n";
 
             // Loongitudinal motion planning (Velocity keeping)
             for(double tv = TARGET_SPEED - D_T_S * N_S_SAMPLE; tv < TARGET_SPEED + D_T_S * N_S_SAMPLE; tv += D_T_S){
@@ -214,37 +213,29 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
                 frenet_paths.push_back(tfp);
             }
         }
-//        std::cout << "end path\n";
     }
-//    std::cout << "return path\n";
     return frenet_paths;
 }
 
 std::vector<Frenet_path> Frenet_plan::calc_global_paths(std::vector<Frenet_path> &fplist, Spline2D &csp){
     for(Frenet_path &fp : fplist){
-//        std::cout << "start global\n";
-        //calc global positions
-        fp.x.resize(fp.s.size());
-        fp.y.resize(fp.s.size());
-        for(int i = 0; i < fp.s.size(); ++i){
-//            std::cout << "fp.s start global\n";
-//            std::cout << "fp.s's size: " << fp.s.size() << std::endl;
+        std::vector<double> fpx;
+        std::vector<double> fpy;
+        for(int i = 0; i < fp.s.size() - 1; ++i){
             auto ixy_pair = csp.calc_position(fp.s(i));
-            //std::cout << "fp.s 1 start global\n";
-            if(ixy_pair.first == -1 || ixy_pair.second == -1)
+            if(std::isnan(ixy_pair.first)){
                 break;
+            }
             auto iyaw = csp.calc_yaw(fp.s(i));
-            //std::cout << "fp.s 2 start global\n";
             auto di = fp.d(i);
-//            std::cout << "fp.s 3 start global\n";
             auto fx = ixy_pair.first + di * cos(iyaw + M_PI / 2.0);
             auto fy = ixy_pair.second + di * sin(iyaw + M_PI / 2.0);
-//            std::cout << "fp.s 4 start global\n";
-            fp.x(i) = fx;
-            fp.y(i) = fy;
-//            std::cout << "fp.s end global\n";
+            fpx.push_back(fx);
+            fpy.push_back(fy);
         }
-//        std::cout << "yaw global\n";
+        fp.x = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(fpx.data(), fpx.size());
+        fp.y = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(fpy.data(), fpy.size());
+
         // calc yaw and ds
         fp.yaw.resize(fp.x.size());
         fp.ds.resize(fp.x.size());
@@ -257,14 +248,11 @@ std::vector<Frenet_path> Frenet_plan::calc_global_paths(std::vector<Frenet_path>
         fp.yaw(fp.yaw.size() - 1) = fp.yaw(fp.yaw.size() - 2);
         fp.ds(fp.ds.size() - 1) = fp.ds(fp.ds.size() - 2);
 
-//        std::cout << "curvature global\n";
         //calc curvature !! fp.c size is smaller than fp.yaw
         fp.c.resize(fp.yaw.size() - 1);
         for(int i = 0; i < fp.yaw.size() - 1; ++i)
             fp.c(i) = (fp.yaw(i + 1) - fp.yaw(i)) / fp.ds(i);
-//        std::cout << "end global\n";
     }
-//    std::cout << "return global\n";
     return fplist;
 }
 
@@ -350,6 +338,7 @@ Frenet_plan::generate_target_course(VectorXd& x, VectorXd& y){
     std::vector<double>ry;
     std::vector<double> ryaw;
     std::vector<double> rk;
+    std::cout << csp.s(csp.s.size() - 1) << std::endl;
     for(double i_s = 0; i_s < csp.s(csp.s.size() - 1); i_s += 0.1){
         auto ixy = csp.calc_position(i_s);
         auto ix = ixy.first;
