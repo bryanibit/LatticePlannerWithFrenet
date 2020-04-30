@@ -1,15 +1,15 @@
 #include <iostream>
-#include <opencv2/opencv.hpp>
-#include <Eigen/Dense>
-#include <Frenet_path.hpp>
-#include <cubic_spline.hpp>
-#include "../matplotlib-cpp/matplotlibcpp.h"
+#include "opencv2/opencv.hpp"
+#include "Eigen/Dense"
+#include "Frenet_path.hpp"
+#include "cubic_spline.hpp"
+//#include "../matplotlib-cpp/matplotlibcpp.h"
 #include <chrono>
 
 using namespace std;
 using namespace cv;
 using namespace Eigen;
-namespace plt = matplotlibcpp;
+//namespace plt = matplotlibcpp;
 
 const int SIM_LOOP = 500;
 int main() {
@@ -41,7 +41,7 @@ int main() {
     auto tc = std::get<3>(contuple);
     auto csp = std::get<4>(contuple);
     // initial state
-    auto c_speed = 10.0 / 3.6;  // current speed [m/s]
+    auto c_speed = 30.0 / 3.6;  // current speed [m/s]
     auto c_d = 2.0;  // current lateral position [m]
     auto c_d_d = 0.0;  // current lateral speed [m/s]
     auto c_d_dd = 0.0;  // current latral acceleration [m/s]
@@ -60,7 +60,7 @@ int main() {
         c_d_d = path.d_d[1];
         c_d_dd = path.d_dd[1];
         c_speed = path.s_d[1];
-
+		std::cout << s0 << ", " << c_d << std::endl;
 //        if(i % 10 == 0)
 //            std::cout << "----------" << i << "----------" << std::endl;
         if(pow(path.x(1) - tx[tx.size() - 1], 2) + pow(path.y(1) - ty[ty.size() - 1], 2) <= 1.0){
@@ -70,34 +70,36 @@ int main() {
 
         if(show_animation) {
             // draw
-            plt::clf();
-            plt::plot(tx, ty);
-            vector<double> vec_x(path.x.data(), path.x.data() + path.x.rows() * path.x.cols());
-            vector<double> vec_y(path.y.data(), path.y.data() + path.y.rows() * path.y.cols());
-            plt::plot(vec_x, vec_y, "-or");
-            vector<double> ob_x(ob.data(), ob.data() + ob.size()/2);
-            vector<double> ob_y(ob.data() + ob.size()/2, ob.data() + ob.size());
-            plt::plot(ob_x, ob_y, "xk");
-//            plt::xlim(path.x[1] - area, path.x[1] + area);
-//            plt::ylim(path.y[1] - area, path.y[1] + area);
-            plt::title("v[km/h]:" + to_string(c_speed * 3.6));
-            plt::grid(true);
-            plt::pause(0.1);
-//            map = cv::Scalar(255,255,255);
-//            for(int i = 0; i < ob.rows(); ++i){
-//                cv::circle(map, cv::Point2d((ob(i, 0)- *origxmin) * 10, (ob(i, 1)- *origymin) * 10), 4,
-//                           cv::Scalar(255,255,255), -1);
-//            }
-//            for(int i= 0; i < tx.size() - 1; ++i){
-//                cv::line(map, cv::Point2d((tx[i] - *origxmin) * 10, (ty[i] - *origymin)* 10),
-//                         cv::Point2d((tx[i+1] - *origxmin) * 10, (ty[i + 1] - *origymin) * 10), cv::Scalar(255,0,0),2);
-//            }
-//            for(int i = 1; i < path.x.size() - 1; ++i){
-//                cv::line(map, cv::Point2d((path.x(i) - *origxmin) * 10, (path.y(i) - *origymin) * 10),
-//                         cv::Point2d((path.x(i + 1) - *origxmin) * 10, (path.y(i + 1) - *origymin) * 10), cv::Scalar(0, 0, 255), 2);
-//            }
-//            cv::imshow("img", map);
-//            cv::waitKey(100);
+//            plt::clf();
+//            plt::plot(tx, ty);
+//            vector<double> vec_x(path.x.data(), path.x.data() + path.x.rows() * path.x.cols());
+//            vector<double> vec_y(path.y.data(), path.y.data() + path.y.rows() * path.y.cols());
+//            plt::plot(vec_x, vec_y, "-or");
+//            vector<double> ob_x(ob.data(), ob.data() + ob.size()/2);
+//            vector<double> ob_y(ob.data() + ob.size()/2, ob.data() + ob.size());
+//            plt::plot(ob_x, ob_y, "xk");
+////            plt::xlim(path.x[1] - area, path.x[1] + area);
+////            plt::ylim(path.y[1] - area, path.y[1] + area);
+//            plt::title("v[km/h]:" + to_string(c_speed * 3.6));
+//            plt::grid(true);
+//            plt::pause(0.1);
+
+            map = cv::Scalar(255,255,255);
+            for(int i = 0; i < ob.rows(); ++i){
+                cv::circle(map, cv::Point2d((ob(i, 0)- *origxmin) * 10, (ob(i, 1)- *origymin) * 10), 4,
+                           cv::Scalar(0,255,0), -1);
+            }
+            for(int i= 0; i < tx.size() - 1; ++i){
+                cv::line(map, cv::Point2d((tx[i] - *origxmin) * 10, (ty[i] - *origymin)* 10),
+                         cv::Point2d((tx[i+1] - *origxmin) * 10, (ty[i + 1] - *origymin) * 10), cv::Scalar(255,0,0),2);
+            }
+            for(int i = 1; i < path.x.size() - 1; ++i){
+                cv::line(map, cv::Point2d((path.x(i) - *origxmin) * 10, (path.y(i) - *origymin) * 10),
+                         cv::Point2d((path.x(i + 1) - *origxmin) * 10, (path.y(i + 1) - *origymin) * 10), cv::Scalar(0, 0, 255), 2);
+            }
+			cv::flip(map, map, 0);
+            cv::imshow("img", map);
+            cv::waitKey(100);
 
         }
     }

@@ -1,4 +1,4 @@
-#include <Frenet_path.hpp>
+#include "Frenet_path.hpp"
 #define M_PI 3.14159265358979323846
 
 const double MAX_SPEED = 50.0 / 3.6; // maximum speed [m/s]
@@ -162,9 +162,8 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
         //  Lateral motion planning
         for(double Ti = MINT; Ti < MAXT; Ti += DT){
             Frenet_path fp = Frenet_path();
-            //std::cout << "Ti / DT: " << Ti/DT << std::endl;
-            //std::cout << "ceil of Ti / DT:" << ceil(Ti/DT) << std::endl;
             fp.t.resize(static_cast<int> (ceil(Ti/DT)));
+
             fp.d.resize(static_cast<int> (ceil(Ti/DT)));
             fp.d_d.resize(static_cast<int> (ceil(Ti/DT)));
             fp.d_dd.resize(static_cast<int> (ceil(Ti/DT)));
@@ -175,9 +174,15 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
             fp.s_ddd.resize(static_cast<int> (ceil(Ti/DT)));
 
             auto lat_qp = quintic_polynomial(c_d, c_d_d, c_d_dd, di, 0.0, 0.0, Ti);
-            for(auto i_t = std::make_pair(0, 0.0); i_t.first < static_cast<int>(ceil(Ti/DT)) && i_t.second < Ti; ++i_t.first, i_t.second += DT) {
+            for(auto i_t = std::make_pair(0, 0.0); i_t.first < static_cast<int>(ceil(Ti/DT)) && i_t.second < Ti + DT/10.0; ++i_t.first, i_t.second += DT) {
                 fp.t(i_t.first) = i_t.second;
             }
+			///
+			//std::cout << "Ti / DT: " << Ti / DT << std::endl;
+			//std::cout << "ceil of Ti / DT:" << ceil(Ti / DT) << std::endl;
+			//std::cout << "fp.t.size: " << fp.t.size() << std::endl;
+			//std::cout << std::endl;
+			///
             for(int i = 0; i < fp.t.size(); ++i)
                 fp.d(i) = lat_qp.calc_point(fp.t(i));
             for(int i = 0; i < fp.t.size(); ++i)
@@ -188,7 +193,7 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
                 fp.d_ddd(i) = lat_qp.calc_third_derivative(fp.t(i));
 
             // Loongitudinal motion planning (Velocity keeping)
-            for(double tv = TARGET_SPEED - D_T_S * N_S_SAMPLE; tv < TARGET_SPEED + D_T_S * N_S_SAMPLE; tv += D_T_S){
+            for(double tv = TARGET_SPEED - D_T_S * N_S_SAMPLE; tv < TARGET_SPEED + D_T_S * N_S_SAMPLE + D_T_S / 10.0; tv += D_T_S){
                 auto tfp = fp;
                 auto lon_qp = quartic_polynomial(s0, c_speed, 0.0, tv, 0.0, Ti);
                 //std::cout << "fp.t.size(): " << fp.t.size() << std::endl;
@@ -221,9 +226,10 @@ std::vector<Frenet_path> Frenet_plan::calc_global_paths(std::vector<Frenet_path>
     for(Frenet_path &fp : fplist){
         std::vector<double> fpx;
         std::vector<double> fpy;
-        for(int i = 0; i < fp.s.size() - 1; ++i){
+        for(int i = 0; i < fp.s.size(); ++i){
             auto ixy_pair = csp.calc_position(fp.s(i));
             if(std::isnan(ixy_pair.first)){
+				//std::cout << "None-----------!\n";
                 break;
             }
             auto iyaw = csp.calc_yaw(fp.s(i));

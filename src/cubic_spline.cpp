@@ -1,5 +1,5 @@
-#include <cubic_spline.hpp>
-#include <Eigen/Dense>
+#include "cubic_spline.hpp"
+#include "Eigen/Dense"
 using namespace Eigen;
 
 /*   Cubic Spline class   */
