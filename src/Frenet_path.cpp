@@ -254,6 +254,7 @@ std::vector<Frenet_path> Frenet_plan::calc_global_paths(std::vector<Frenet_path>
             fp.yaw(i) = atan(dy/dx);
             fp.ds(i) = sqrt(dx*dx + dy*dy);
         }
+        // error--------------------------------------------------------
         fp.yaw(fp.yaw.size() - 1) = fp.yaw(fp.yaw.size() - 2);
         fp.ds(fp.ds.size() - 1) = fp.ds(fp.ds.size() - 2);
 

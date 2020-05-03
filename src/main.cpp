@@ -44,7 +44,7 @@ int main() {
     auto tc = std::get<3>(contuple);
     auto csp = std::get<4>(contuple);
     // initial state
-    auto c_speed = 10.0 / 3.6;  // current speed [m/s]
+    auto c_speed = 30.0 / 3.6;  // current speed [m/s]
     auto c_d = 2.0;  // current lateral position [m]
     auto c_d_d = 0.0;  // current lateral speed [m/s]
     auto c_d_dd = 0.0;  // current latral acceleration [m/s]
