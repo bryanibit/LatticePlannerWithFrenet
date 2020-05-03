@@ -130,7 +130,9 @@ double quartic_polynomial::calc_third_derivative(double t) {
     return xt;
 }
 
-Frenet_path::Frenet_path(){}
+Frenet_path::Frenet_path(){
+	valid = true;
+}
 Frenet_path::~Frenet_path() {}
 
 Frenet_path::Frenet_path(const Frenet_path& fp){
@@ -152,6 +154,7 @@ Frenet_path::Frenet_path(const Frenet_path& fp){
     this->yaw = fp.yaw;
     this->ds = fp.ds;
     this->c = fp.c;
+	this->valid = fp.valid;
 }
 
 std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c_d, double c_d_d, double c_d_dd, double s0){
@@ -313,7 +316,11 @@ std::vector<Frenet_path> Frenet_plan::check_paths(std::vector<Frenet_path> &fpli
             continue;
         okind.push_back(i);
     }
-    std::vector<Frenet_path> res;
+	std::vector<Frenet_path> res;
+	if (okind.empty()) {
+		std::cerr << "There is no suitable road.\n";
+		return res;
+	}
     for(auto ind: okind){
         res.push_back(fplist[ind]);
     }
@@ -323,11 +330,33 @@ std::vector<Frenet_path> Frenet_plan::check_paths(std::vector<Frenet_path> &fpli
 Frenet_path Frenet_plan::frenet_optimal_planning(Spline2D& csp, double s0, double c_speed, double c_d, double c_d_d, double c_d_dd, MatrixXd &ob){
     auto fplist = this->calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0);
     fplist = this->calc_global_paths(fplist, csp);
+	double origxmin = 0;
+	double origymin = -6.0583;
+	double origxmax = 70.4656;
+	double origymax = 7.18157;
+	int fp_map_height = (origymax - origymin) * 20 + 1;
+	int fp_map_width = (origxmax - origxmin) * 10 + 1;
+	cv::Mat fp_map(static_cast<int>(ceil(fp_map_height)), static_cast<int>(ceil(fp_map_width)), CV_8UC3, cv::Scalar(255, 255, 255));
+	for (int i = 0; i < fplist.size(); ++i) {
+		for (int j = 0; j < fplist[i].x.size() - 1 && j < fplist[i].y.size() - 1; ++j) {
+			// std::cout << "front:(" << (fplist[i].x(j) - origxmin) * 10 << ", " << (fplist[i].y(j) - origymin) * 10 << ")" <<
+			//	 "  latter:(" << (fplist[i].x(j + 1) - origxmin) * 10 << "," << (fplist[i].y(j + 1) - origymin) * 10 << ")" << std::endl;
+			cv::line(fp_map, cv::Point2d((fplist[i].x(j) - origxmin) * 10, (fplist[i].y(j) - origymin) * 10),
+				cv::Point2d((fplist[i].x(j + 1) - origxmin) * 10, (fplist[i].y(j + 1) - origymin) * 10), cv::Scalar(0, 0, 255), 1);
+		}
+	}
+	cv::flip(fp_map, fp_map, 0);
+	cv::imshow("fp_map", fp_map);
+	cv::waitKey(10);
     fplist = this->check_paths(fplist, ob);
 
+	auto bestpath = Frenet_path();
+	if (fplist.empty()) {
+		bestpath.valid = false;
+		return bestpath;
+	}
     // find minimum cost path
-    auto mincost = std::numeric_limits<double>::max();
-    auto bestpath = Frenet_path();
+    auto mincost = std::numeric_limits<double>::max() / 3.0;
     for(auto fp: fplist){
         if(mincost >= fp.cf){
             mincost = fp.cf;

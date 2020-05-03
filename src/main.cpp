@@ -23,9 +23,10 @@ int main() {
     wy << 0.0, -6.0, 5.0, 6.5, 0.0;
     // obstacles
     Eigen::MatrixXd ob(5,2);
+	// (30.057, 7.10775)
     ob <<   20.0, 10.0,
-            30.0, 6.0,
-            30.0, 8.0,
+            30.0, 5.5,
+            30.0, 8.5,
             35.0, 8.0,
             50.0, 3.0;
     auto fplan = Frenet_plan();
@@ -33,6 +34,8 @@ int main() {
     // tx ty tyaw tc is vector<double>
     vector<double> tx = std::get<0>(contuple);
     vector<double> ty = std::get<1>(contuple);
+	//for (int k = 0; k < tx.size(); ++k)
+	//	std::cout << "(" << tx.at(k) << ", " << ty.at(k) << ")" << std::endl;
     auto origxmin = std::min_element(tx.begin(), tx.end());
     auto origxmax = std::max_element(tx.begin(), tx.end());
     auto origymin = std::min_element(ty.begin(), ty.end());
@@ -41,7 +44,7 @@ int main() {
     auto tc = std::get<3>(contuple);
     auto csp = std::get<4>(contuple);
     // initial state
-    auto c_speed = 30.0 / 3.6;  // current speed [m/s]
+    auto c_speed = 10.0 / 3.6;  // current speed [m/s]
     auto c_d = 2.0;  // current lateral position [m]
     auto c_d_d = 0.0;  // current lateral speed [m/s]
     auto c_d_dd = 0.0;  // current latral acceleration [m/s]
@@ -51,16 +54,18 @@ int main() {
     auto map_height = (*origymax - *origymin) * 20 + 1;
 
     Mat map(static_cast<int>(ceil(map_height)), static_cast<int>(ceil(map_width)), CV_8UC3, Scalar(255,255,255));
-
+	//std::cout << "(" << *origxmin << ", " << *origymin << "), (" << *origxmax << ", " << *origymax << std::endl;
     for(int i = 0; i < SIM_LOOP; ++i){
         auto path = fplan.frenet_optimal_planning(
                 csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob);
+		if (!path.valid)
+			return 1;
         s0 = path.s[1];
         c_d = path.d[1];
         c_d_d = path.d_d[1];
         c_d_dd = path.d_dd[1];
         c_speed = path.s_d[1];
-		std::cout << s0 << ", " << c_d << std::endl;
+		//std::cout << s0 << ", " << c_d << std::endl;
 //        if(i % 10 == 0)
 //            std::cout << "----------" << i << "----------" << std::endl;
         if(pow(path.x(1) - tx[tx.size() - 1], 2) + pow(path.y(1) - ty[ty.size() - 1], 2) <= 1.0){

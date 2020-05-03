@@ -1,6 +1,6 @@
 #ifndef CUBIC_INCLUDED
 #define CUBIC_INCLUDED
-#include "Eigen/Dense"
+#include <Eigen/Dense>
 #include <iostream>
 #include <cmath>
 using namespace Eigen;

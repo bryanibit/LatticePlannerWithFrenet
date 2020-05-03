@@ -6,6 +6,7 @@
 #include <tuple>
 #include <chrono>
 #include <cmath>
+#include "opencv2/opencv.hpp"
 using namespace Eigen;
 class quintic_polynomial{
 private:
@@ -81,6 +82,7 @@ public:
     VectorXd yaw;
     VectorXd ds;
     VectorXd c;
+	bool valid;
 };
 
 class Frenet_plan{
