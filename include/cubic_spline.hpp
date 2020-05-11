@@ -1,6 +1,6 @@
 #ifndef CUBIC_INCLUDED
 #define CUBIC_INCLUDED
-#include <Eigen/Dense>
+#include "Eigen/Dense"
 #include <iostream>
 #include <cmath>
 using namespace Eigen;
@@ -35,6 +35,8 @@ private:
     VectorXd ds;
 public:
     VectorXd s;
+    Spline2D();
+    ~Spline2D();
     Spline2D(const VectorXd &, const VectorXd &);
     Eigen::VectorXd __calc_s(const VectorXd &, const VectorXd &);
     std::pair<double, double> calc_position(double);

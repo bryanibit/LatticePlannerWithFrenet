@@ -2,7 +2,7 @@
 #define M_PI 3.14159265358979323846
 
 const double MAX_SPEED = 50.0 / 3.6; // maximum speed [m/s]
-const double MAX_ACCEL = 2.0;  // maximum acceleration [m/ss]
+const double MAX_ACCEL = 5.0;  // maximum acceleration [m/ss]
 const double MAX_CURVATURE = 1.0;  // maximum curvature [1/m]
 const double MAX_ROAD_WIDTH = 7.0;  // maximum road width [m]
 const double D_ROAD_W = 1.0;  // road width sampling length [m]
@@ -131,7 +131,7 @@ double quartic_polynomial::calc_third_derivative(double t) {
 }
 
 Frenet_path::Frenet_path(){
-	valid = true;
+    this->valid = true;
 }
 Frenet_path::~Frenet_path() {}
 
@@ -154,7 +154,7 @@ Frenet_path::Frenet_path(const Frenet_path& fp){
     this->yaw = fp.yaw;
     this->ds = fp.ds;
     this->c = fp.c;
-	this->valid = fp.valid;
+    this->valid = fp.valid;
 }
 
 std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c_d, double c_d_d, double c_d_dd, double s0){
@@ -254,12 +254,12 @@ std::vector<Frenet_path> Frenet_plan::calc_global_paths(std::vector<Frenet_path>
             fp.yaw(i) = atan(dy/dx);
             fp.ds(i) = sqrt(dx*dx + dy*dy);
         }
-        // error--------------------------------------------------------
-        fp.yaw(fp.yaw.size() - 1) = fp.yaw(fp.yaw.size() - 2);
-        fp.ds(fp.ds.size() - 1) = fp.ds(fp.ds.size() - 2);
-
+        if(fp.x.size() > 1) {
+            fp.yaw(fp.yaw.size() - 1) = fp.yaw(fp.yaw.size() - 2);
+            fp.ds(fp.ds.size() - 1) = fp.ds(fp.ds.size() - 2);
+        }
         //calc curvature !! fp.c size is smaller than fp.yaw
-        fp.c.resize(fp.yaw.size() - 1);
+        fp.c.resize(fp.yaw.size() - 1 < 0? 0: fp.yaw.size() - 1);
         for(int i = 0; i < fp.yaw.size() - 1; ++i)
             fp.c(i) = (fp.yaw(i + 1) - fp.yaw(i)) / fp.ds(i);
     }
@@ -317,47 +317,34 @@ std::vector<Frenet_path> Frenet_plan::check_paths(std::vector<Frenet_path> &fpli
             continue;
         okind.push_back(i);
     }
-	std::vector<Frenet_path> res;
-	if (okind.empty()) {
-		std::cerr << "There is no suitable road.\n";
-		return res;
-	}
+    std::vector<Frenet_path> res;
     for(auto ind: okind){
         res.push_back(fplist[ind]);
     }
     return res;
 }
 
+std::tuple<double, double, double> Frenet_plan::getXYtheta(double s, double di, Spline2D& csp){
+        auto ixy_pair = csp.calc_position(s);
+        if(std::isnan(ixy_pair.first))
+            return std::make_tuple(-1,-1, -2*M_PI);
+        auto iyaw = csp.calc_yaw(s);
+        auto fx = ixy_pair.first + di * cos(iyaw + M_PI / 2.0);
+        auto fy = ixy_pair.second + di * sin(iyaw + M_PI / 2.0);
+        return std::make_tuple(fx, fy, iyaw);
+}
+
 Frenet_path Frenet_plan::frenet_optimal_planning(Spline2D& csp, double s0, double c_speed, double c_d, double c_d_d, double c_d_dd, MatrixXd &ob){
     auto fplist = this->calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0);
     fplist = this->calc_global_paths(fplist, csp);
-	double origxmin = 0;
-	double origymin = -6.0583;
-	double origxmax = 70.4656;
-	double origymax = 7.18157;
-	int fp_map_height = (origymax - origymin) * 20 + 1;
-	int fp_map_width = (origxmax - origxmin) * 10 + 1;
-	cv::Mat fp_map(static_cast<int>(ceil(fp_map_height)), static_cast<int>(ceil(fp_map_width)), CV_8UC3, cv::Scalar(255, 255, 255));
-	for (int i = 0; i < fplist.size(); ++i) {
-		for (int j = 0; j < fplist[i].x.size() - 1 && j < fplist[i].y.size() - 1; ++j) {
-			// std::cout << "front:(" << (fplist[i].x(j) - origxmin) * 10 << ", " << (fplist[i].y(j) - origymin) * 10 << ")" <<
-			//	 "  latter:(" << (fplist[i].x(j + 1) - origxmin) * 10 << "," << (fplist[i].y(j + 1) - origymin) * 10 << ")" << std::endl;
-			cv::line(fp_map, cv::Point2d((fplist[i].x(j) - origxmin) * 10, (fplist[i].y(j) - origymin) * 10),
-				cv::Point2d((fplist[i].x(j + 1) - origxmin) * 10, (fplist[i].y(j + 1) - origymin) * 10), cv::Scalar(0, 0, 255), 1);
-		}
-	}
-	cv::flip(fp_map, fp_map, 0);
-	cv::imshow("fp_map", fp_map);
-	cv::waitKey(10);
     fplist = this->check_paths(fplist, ob);
-
-	auto bestpath = Frenet_path();
-	if (fplist.empty()) {
-		bestpath.valid = false;
-		return bestpath;
-	}
     // find minimum cost path
-    auto mincost = std::numeric_limits<double>::max() / 3.0;
+    auto mincost = std::numeric_limits<double>::max();
+    auto bestpath = Frenet_path();
+    if(fplist.empty()){
+        bestpath.valid = false;
+        return bestpath;
+    }
     for(auto fp: fplist){
         if(mincost >= fp.cf){
             mincost = fp.cf;
@@ -385,4 +372,87 @@ Frenet_plan::generate_target_course(VectorXd& x, VectorXd& y){
         rk.push_back(csp.calc_curvature(i_s));
     }
     return std::make_tuple(rx, ry, ryaw, rk, csp);
+}
+int Frenet_plan::ClosestWaypoint(double x, double y, const std::vector<double> &maps_x, const std::vector<double> &maps_y)
+{
+
+    double closestLen = std::numeric_limits<double>::max()/ 3.0; //large number
+    int closestWaypoint = 0;
+
+    for(int i = 0; i < maps_x.size(); i++)
+    {
+//        double map_x = maps_x[i];
+//        double map_y = maps_y[i];
+        double dist = sqrt(pow(x - maps_x[i], 2) + pow(y - maps_y[i], 2));
+        if(dist < closestLen)
+        {
+            closestLen = dist;
+            closestWaypoint = i;
+        }
+    }
+
+    return closestWaypoint;
+
+}
+int Frenet_plan::NextWaypoint(double x, double y, double theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y)
+{
+
+    int closestWaypoint = ClosestWaypoint(x,y,maps_x,maps_y);
+
+    double map_x = maps_x[closestWaypoint];
+    double map_y = maps_y[closestWaypoint];
+
+    double heading = atan2((map_y-y),(map_x-x));
+
+    /// TODO: theta is the same with value using derivative
+    theta = atan2(map_y - maps_y[closestWaypoint > 0? closestWaypoint - 1: maps_y.size() - 1], map_x - maps_x[closestWaypoint > 0? closestWaypoint - 1: maps_x.size() - 1]);
+
+    double angle = fabs(theta-heading);
+    angle = std::min(2*M_PI - angle, angle);
+
+    if(angle > M_PI/4)
+    {
+        closestWaypoint++;
+        if (closestWaypoint == maps_x.size())
+        {
+            closestWaypoint = 0;
+        }
+    }
+    return closestWaypoint;
+}
+
+std::pair<double, double> Frenet_plan::getFrenet(double x, double y, double theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y)
+{
+    int next_wp = NextWaypoint(x,y, theta, maps_x,maps_y);
+
+    int prev_wp;
+    prev_wp = next_wp-1;
+    if(next_wp == 0)
+    {
+        prev_wp  = maps_x.size()-1;
+    }
+
+    double n_x = maps_x[next_wp]-maps_x[prev_wp];
+    double n_y = maps_y[next_wp]-maps_y[prev_wp];
+    double x_x = x - maps_x[prev_wp];
+    double x_y = y - maps_y[prev_wp];
+
+    // find the projection of x onto n
+    double proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y);
+    double proj_x = proj_norm*n_x;
+    double proj_y = proj_norm*n_y;
+
+    double frenet_d = (n_y * x_x - n_x * x_y) / sqrt(pow(n_x, 2) + pow(n_y, 2));
+
+    // calculate s value
+    double frenet_s = 0;
+    for(int i = 0; i < prev_wp; i++)
+    {
+        frenet_s += sqrt(pow(maps_x[i] - maps_x[i+1], 2) + pow(maps_y[i] - maps_y[i+1], 2));
+    }
+
+    frenet_s += sqrt(pow(proj_x, 2) + pow(proj_y, 2));
+
+    return std::make_pair(frenet_s,frenet_d);
+
 }

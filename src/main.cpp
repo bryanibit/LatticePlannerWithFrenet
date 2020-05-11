@@ -11,16 +11,15 @@ using namespace cv;
 using namespace Eigen;
 //namespace plt = matplotlibcpp;
 
-const int SIM_LOOP = 500;
 int main() {
     auto show_animation = true;
     std::cout << "Start...\n";
     // Current status will be shown in this file
     // Way points
-    Eigen::VectorXd wx(5);
-    wx << 0.0, 10.0, 20.5, 35.0, 70.5;
-    Eigen::VectorXd wy(5);
-    wy << 0.0, -6.0, 5.0, 6.5, 0.0;
+    Eigen::VectorXd wx(6);
+    wx << 0.0, 10.0, 20.5, 35.0, 70.5, 90.0;
+    Eigen::VectorXd wy(6);
+    wy << 0.0, -6.0, 5.0, 6.5, 0.0, 0.5;
     // obstacles
     Eigen::MatrixXd ob(5,2);
 	// (30.057, 7.10775)
@@ -28,7 +27,7 @@ int main() {
             30.0, 5.5,
             30.0, 8.5,
             35.0, 8.0,
-            50.0, 3.0;
+            50.0, 2.5;
     auto fplan = Frenet_plan();
     auto contuple = fplan.generate_target_course(wx, wy);
     // tx ty tyaw tc is vector<double>
@@ -44,7 +43,7 @@ int main() {
     auto tc = std::get<3>(contuple);
     auto csp = std::get<4>(contuple);
     // initial state
-    auto c_speed = 30.0 / 3.6;  // current speed [m/s]
+    auto c_speed = 10.0 / 3.6;  // current speed [m/s]
     auto c_d = 2.0;  // current lateral position [m]
     auto c_d_d = 0.0;  // current lateral speed [m/s]
     auto c_d_dd = 0.0;  // current latral acceleration [m/s]
@@ -55,11 +54,13 @@ int main() {
 
     Mat map(static_cast<int>(ceil(map_height)), static_cast<int>(ceil(map_width)), CV_8UC3, Scalar(255,255,255));
 	//std::cout << "(" << *origxmin << ", " << *origymin << "), (" << *origxmax << ", " << *origymax << std::endl;
-    for(int i = 0; i < SIM_LOOP; ++i){
+    while(true) {
         auto path = fplan.frenet_optimal_planning(
                 csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob);
-		if (!path.valid)
-			return 1;
+		if (!path.valid){
+            std::cout << "Not any paths found\n";
+            break;
+        }
         s0 = path.s[1];
         c_d = path.d[1];
         c_d_d = path.d_d[1];

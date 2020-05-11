@@ -16,12 +16,15 @@ Spline::Spline(const Spline& S){
     this->c = S.c;
     this->d = S.d;
 }
+
+/// x_ is cumulated distance of (wx, wy)
 Spline::Spline(const VectorXd &x_, const VectorXd &y_){
         this->x = x_;
         this->y = y_;
         this->nx = x_.size();
         VectorXd h(x.size() - 1);
         this->a = this->y;
+        /// h is single segment distance
         for(int i = 1; i < x.size(); ++i){
             h(i - 1) = x(i) -x(i - 1);
         }
@@ -119,7 +122,11 @@ Eigen::VectorXd Spline::__calc_B(const VectorXd &h) {
         return B;
 }
 
-/*    2D Cubic Spline class  */
+/*    2D Cubic Spline class  */\
+Spline2D::Spline2D(){}
+
+Spline2D::~Spline2D(){}
+
 Spline2D::Spline2D(const VectorXd &x_, const VectorXd &y_){
     this->s = this->__calc_s(x_, y_);
     this->sx = Spline(this->s, x_);

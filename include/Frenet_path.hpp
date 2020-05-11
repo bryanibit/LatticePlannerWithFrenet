@@ -82,17 +82,31 @@ public:
     VectorXd yaw;
     VectorXd ds;
     VectorXd c;
-	bool valid;
+
+    bool valid;
 };
 
 class Frenet_plan{
 public:
     std::vector<Frenet_path> calc_frenet_paths(double c_speed, double c_d, double c_d_d, double c_d_dd, double s0);
+    
     std::vector<Frenet_path> calc_global_paths(std::vector<Frenet_path> &, Spline2D &);
+    
     bool check_collision(Frenet_path&, MatrixXd&);
+
     std::vector<Frenet_path> check_paths(std::vector<Frenet_path> &, MatrixXd &);
+
     Frenet_path frenet_optimal_planning(Spline2D &, double s0, double c_speed, double c_d, double c_d_d, double c_d_dd, MatrixXd &ob);
+
     std::tuple<std::vector<double>, std::vector<double>, std::vector<double>, std::vector<double>, Spline2D>
     generate_target_course(VectorXd&, VectorXd&);
+
+    /// calculate from s,d to x, y, theta
+    std::tuple<double, double, double> getXYtheta(double s, double di, Spline2D& csp);
+
+    /// calculate from x,y,theta to frenet s,d
+    int ClosestWaypoint(double x, double y, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
+    int NextWaypoint(double x, double y, double theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
+    std::pair<double, double> getFrenet(double x, double y, double theta, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
 };
 #endif
