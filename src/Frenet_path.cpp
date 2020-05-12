@@ -299,7 +299,7 @@ std::vector<Frenet_path> Frenet_plan::check_paths(std::vector<Frenet_path> &fpli
             continue;
         else if([&fplist, i](){
             for(int j = 0; j < fplist[i].s_dd.size(); ++j){
-                if(abs(fplist[i].s_dd(j)) > MAX_ACCEL)
+                if(fabs(fplist[i].s_dd(j)) > MAX_ACCEL)
                     return true;
             }
             return false;
@@ -307,7 +307,7 @@ std::vector<Frenet_path> Frenet_plan::check_paths(std::vector<Frenet_path> &fpli
             continue;
         else if([&fplist, i](){
             for(int j = 0; j < fplist[i].c.size(); ++j){
-                if(abs(fplist[i].c(j)) > MAX_CURVATURE)
+                if(fabs(fplist[i].c(j)) > MAX_CURVATURE)
                     return true;
             }
             return false;
