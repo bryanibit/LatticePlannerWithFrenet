@@ -169,6 +169,6 @@ double Spline2D::calc_curvature(double s){
 double Spline2D::calc_yaw(double s){
     auto dx = this->sx.calcd(s);
     auto dy = this->sy.calcd(s);
-    auto yaw = atan(dy/dx);
+    auto yaw = atan2(dy, dx);
     return yaw;
 }
