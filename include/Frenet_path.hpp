@@ -88,7 +88,7 @@ public:
 
 class Frenet_plan{
 public:
-    std::vector<Frenet_path> calc_frenet_paths(double c_speed, double c_d, double c_d_d, double c_d_dd, double s0);
+    std::vector<Frenet_path> calc_frenet_paths(double c_speed, double c_acc, double c_d, double c_d_d, double c_d_dd, double s0);
     
     std::vector<Frenet_path> calc_global_paths(std::vector<Frenet_path> &, Spline2D &);
     
@@ -96,7 +96,7 @@ public:
 
     std::vector<Frenet_path> check_paths(std::vector<Frenet_path> &, MatrixXd &);
 
-    Frenet_path frenet_optimal_planning(Spline2D &, double s0, double c_speed, double c_d, double c_d_d, double c_d_dd, MatrixXd &ob);
+    Frenet_path frenet_optimal_planning(Spline2D &, double s0, double c_speed, double c_acc, double c_d, double c_d_d, double c_d_dd, MatrixXd &ob);
 
     std::tuple<std::vector<double>, std::vector<double>, std::vector<double>, std::vector<double>, Spline2D>
     generate_target_course(VectorXd&, VectorXd&);

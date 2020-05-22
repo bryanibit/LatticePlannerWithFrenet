@@ -16,8 +16,9 @@ make -j
 
 ## Source
 
-The project is achieved using Eigen and CPP instead of Python and Numpy. Theoriginal project is from a GitHub project called [**AtsushiSakai/PythonRobotics**](https://github.com/AtsushiSakai/PythonRobotics/tree/master/PathPlanning/FrenetOptimalTrajectory) which is Python code. 
+The project is achieved using Eigen and CPP instead of Python and Numpy.And it refers to a GitHub project called [**AtsushiSakai/PythonRobotics**](https://github.com/AtsushiSakai/PythonRobotics/tree/master/PathPlanning/FrenetOptimalTrajectory). At the same time, 
+it adds some other functions, such as transforming from Cartesian coordinate to Frenet and modifies some functions.
 
 ## Visualization
 
-The submodule matplotlib-cpp dir is used for visulization. You can also choose OpenCV to show the result. You can only uncomment the OpenCV showing code in main.cpp.
+The submodule matplotlib-cpp dir is used for visulization. You can switch `matplotshow` to *1* for matplotlib showing in main.cpp. The default visulization is accessible using OpenCV.

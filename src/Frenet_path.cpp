@@ -157,7 +157,7 @@ Frenet_path::Frenet_path(const Frenet_path& fp){
     this->valid = fp.valid;
 }
 
-std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c_d, double c_d_d, double c_d_dd, double s0){
+std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c_acc, double c_d, double c_d_d, double c_d_dd, double s0){
     std::vector<Frenet_path> frenet_paths;
     //  generate path to each offset goal
     for(double di = 0.0 - MAX_ROAD_WIDTH; di < MAX_ROAD_WIDTH; di += D_ROAD_W){
@@ -198,7 +198,7 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
             // Loongitudinal motion planning (Velocity keeping)
             for(double tv = TARGET_SPEED - D_T_S * N_S_SAMPLE; tv < TARGET_SPEED + D_T_S * N_S_SAMPLE + D_T_S / 10.0; tv += D_T_S){
                 auto tfp = fp;
-                auto lon_qp = quartic_polynomial(s0, c_speed, 0.0, tv, 0.0, Ti);
+                auto lon_qp = quartic_polynomial(s0, c_speed, c_acc, tv, 0.0, Ti);
                 //std::cout << "fp.t.size(): " << fp.t.size() << std::endl;
                 for(int i = 0; i < fp.t.size(); ++i)
                     tfp.s(i) = lon_qp.calc_point(fp.t(i));
@@ -334,8 +334,8 @@ std::tuple<double, double, double> Frenet_plan::getXYtheta(double s, double di, 
         return std::make_tuple(fx, fy, iyaw);
 }
 
-Frenet_path Frenet_plan::frenet_optimal_planning(Spline2D& csp, double s0, double c_speed, double c_d, double c_d_d, double c_d_dd, MatrixXd &ob){
-    auto fplist = this->calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0);
+Frenet_path Frenet_plan::frenet_optimal_planning(Spline2D& csp, double s0, double c_speed, double c_acc, double c_d, double c_d_d, double c_d_dd, MatrixXd &ob){
+    auto fplist = this->calc_frenet_paths(c_speed,c_acc, c_d, c_d_d, c_d_dd, s0);
     fplist = this->calc_global_paths(fplist, csp);
     fplist = this->check_paths(fplist, ob);
     // find minimum cost path
