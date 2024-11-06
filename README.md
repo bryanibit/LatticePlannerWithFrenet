@@ -4,7 +4,7 @@
 
 1. Download or clone all project and don't forget submodule(mapplotlib-cpp)
 2. Renew a dir and compile
-3. make sure CMakelists.txt has the right library location, such as Eigen include directory.
+3. make sure CMakelists.txt has the right library location, such as Eigen include directory. And Pythonlib version needs to match yours.
 4. Just run it
 
 ```

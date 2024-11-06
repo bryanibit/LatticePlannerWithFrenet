@@ -195,7 +195,7 @@ std::vector<Frenet_path> Frenet_plan::calc_frenet_paths(double c_speed, double c
             for(int i = 0; i < fp.t.size(); ++i)
                 fp.d_ddd(i) = lat_qp.calc_third_derivative(fp.t(i));
 
-            // Loongitudinal motion planning (Velocity keeping)
+            // Longitudinal motion planning (Velocity keeping)
             for(double tv = TARGET_SPEED - D_T_S * N_S_SAMPLE; tv < TARGET_SPEED + D_T_S * N_S_SAMPLE + D_T_S / 10.0; tv += D_T_S){
                 auto tfp = fp;
                 auto lon_qp = quartic_polynomial(s0, c_speed, 0.0, tv, 0.0, Ti);
